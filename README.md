@@ -1,5 +1,5 @@
 # Pyinstall get APIs
-Python/Tkinter desktop GUI app to retrieve data returned via APIs. This app uses Sqlite3 to store data.
+Python/Tkinter desktop GUI app to retrieve data returned via APIs [Iotwhynot]. This app uses Sqlite3 to store data.
 
 ## Install dependencies
 - [Python 3.7.0 ](https://www.python.org/downloads/release/python-370/)
