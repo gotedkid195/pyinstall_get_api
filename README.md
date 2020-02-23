@@ -2,8 +2,8 @@
 Python/Tkinter desktop GUI app to retrieve data returned via APIs. This app uses Sqlite3 to store data.
 
 ## Install dependencies
-python 3.7.0 [Python](https://www.python.org/)
-pipenv install
+- python 3.7.0 [Python](https://www.python.org/)
+- pipenv install
 
 ## Compile and run python script on Ubuntu
 ```bash
@@ -33,7 +33,9 @@ pyinstaller --onefile --windowed main.py
 ```
 
 ## Use pyinstaller to build the app on Mac
+```bash
 pyinstaller --onefile --add-binary='/System/Library/Frameworks/Tk.framework/Tk':'tk' --add-binary='/System/Library/Frameworks/Tcl.framework/Tcl':'tcl' main.py
+```
 
 ## License
 - [MIT](https://choosealicense.com/licenses/mit/)
