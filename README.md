@@ -29,11 +29,11 @@ python -m pip install pyinstaller
 ```
 - Build app
 ```bash
-pyinstaller --onefile --windowed pyinstall_get_api.py
+pyinstaller --onefile --windowed main.py
 ```
 
 ## Use pyinstaller to build the app on Mac
-pyinstaller --onefile --add-binary='/System/Library/Frameworks/Tk.framework/Tk':'tk' --add-binary='/System/Library/Frameworks/Tcl.framework/Tcl':'tcl' part_manager.py
+pyinstaller --onefile --add-binary='/System/Library/Frameworks/Tk.framework/Tk':'tk' --add-binary='/System/Library/Frameworks/Tcl.framework/Tcl':'tcl' main.py
 
 ## License
 - [MIT](https://choosealicense.com/licenses/mit/)
