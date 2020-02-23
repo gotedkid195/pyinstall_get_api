@@ -2,8 +2,8 @@
 Python/Tkinter desktop GUI app to retrieve data returned via APIs. This app uses Sqlite3 to store data.
 
 ## Install dependencies
-- python 3.7.0 [Python](https://www.python.org/)
-- pipenv install
+- [Python 3.7.0 ](https://www.python.org/downloads/release/python-370/)
+- [Pipenv](https://pypi.org/project/pipenv/)
 
 ## Compile and run python script on Ubuntu
 ```bash
