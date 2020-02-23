@@ -1,2 +1,42 @@
 # pyinstall_get_api
-Python script get data api to server
+Python/Tkinter desktop GUI app to retrieve data returned via APIs. This app uses Sqlite3 to store data.
+
+## Install dependencies
+python 3.7.0 [Python](https://www.python.org/)
+pipenv install
+
+## Compile and run python script on Ubuntu
+```bash
+cd pyinstall_get_api/
+pipenv shell
+pipenv install
+python main.py
+```
+
+
+## Use pyinstaller to build the app on windows
+- Git clone source
+- Install python 3.7.0 [Windows x86-64 executable installer ](https://www.python.org/ftp/python/3.7.0/python-3.7.0-amd64.exe) 
+- Install pipenv
+```bash
+python -m pip install pipenv
+```
+- cd pyinstall_get_api/
+- Install lib
+```bash
+pipenv install
+python -m pip install pyinstaller
+```
+- Build app
+```bash
+pyinstaller --onefile --windowed pyinstall_get_api.py
+```
+
+
+## Use pyinstaller to build the app on  Mac
+pyinstaller --onefile --add-binary='/System/Library/Frameworks/Tk.framework/Tk':'tk' --add-binary='/System/Library/Frameworks/Tcl.framework/Tcl':'tcl' part_manager.py
+
+## License
+- [MIT](https://choosealicense.com/licenses/mit/)
+- Version: 1.0.0
+- Author: Canh Nguyen
