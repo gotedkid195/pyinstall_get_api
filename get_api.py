@@ -4,6 +4,7 @@ import time
 import datetime
 import os
 import errno
+import signal
 
 
 class GetAPI(threading.Thread):
@@ -16,17 +17,18 @@ class GetAPI(threading.Thread):
         self._stop_event = threading.Event()
 
     def stop(self):
-        print("current_thread",threading.current_thread())
-        print("activeCount",threading.activeCount())
-        print("enumerate",threading.enumerate())
+        # print("current_thread",threading.current_thread())
+        # print("activeCount",threading.activeCount())
+        # print("enumerate",threading.enumerate())
 
         self._stop_event.set()
         self.join(1)
 
-        print("stop thread", self)
-        print("current_thread",threading.current_thread())
-        print("activeCount",threading.activeCount())
-        print("enumerate",threading.enumerate())
+        os.kill(os.getpid(), signal.SIGTERM)
+        # print("stop thread", self)
+        # print("current_thread",threading.current_thread())
+        # print("activeCount",threading.activeCount())
+        # print("enumerate",threading.enumerate())
 
     def run(self) -> None:
         for i in range(100):

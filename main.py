@@ -22,19 +22,22 @@ class Example(ThemedTk):
 
         self.frq_label = ttk.Label(self, text="Frequency of taking data")
 
-        freq = (
-            9600,
-            19200,
-            38400,
-            57600,
-            115200,
-            128000,
-            256000,
-            500000,
-            512000,
-        )
+        self.freq = {
+            "5s": 5,
+            "15s": 15,
+            "30s": 30,
+            "1m": 60,
+            "5m": 300,
+            "10m": 600,
+            "15m": 900,
+            "30m": 1800,
+            "1h": 3600,
+            "2h": 7200,
+        }
+        self.key_list = list(self.freq.keys())
+        self.val_list = list(self.freq.values())
         self.frequency = tk.StringVar(self)
-        self.frq_option = ttk.OptionMenu(self, self.frequency, *freq)
+        self.frq_option = ttk.OptionMenu(self, self.frequency, *self.freq.keys())
 
 
         self.parts_list = tk.Listbox(self, height=8, width=60, border=1, background='white')
@@ -42,6 +45,8 @@ class Example(ThemedTk):
         self.direct = tk.StringVar()
         self.sto_label = tk.Label(self, textvariable=self.direct)
         self.sto_button = ttk.Button(self, text="Please select the path to direct the returned data", command=self.file_dialog)
+
+        self.status_label = ttk.Label(self, text="Retrieving data")
 
         self.save_button = ttk.Button(self, text="Save", command=self.add_item)
 
@@ -54,6 +59,12 @@ class Example(ThemedTk):
         self.get_list()
         self.thread = None
 
+    def create_circle(self, x, y, r, canvasName, **kwargs):
+        x0 = x - r
+        y0 = y - r
+        x1 = x + r
+        y1 = y + r
+        return canvasName.create_oval(x0, y0, x1, y1, **kwargs)
 
     def grid_widgets(self):
         """Put widgets in the grid"""
@@ -74,10 +85,16 @@ class Example(ThemedTk):
         self.stop_button.grid(row=5, column=1)
         self.save_button.grid(row=5, column=1, sticky='e')
 
-        self.parts_list.grid(row=6, column=0, columnspan=2, rowspan=2, pady=20)
+        self.parts_list.grid(row=7, column=0, columnspan=2, rowspan=1, pady=20)
         self.parts_list.bind('<<ListboxSelect>>', self.select_item)
 
-        self.license.grid(row=7, column=0, columnspan=3, sticky='s')
+        self.license.grid(row=8, column=0, columnspan=3, sticky='s')
+
+        self.canvas = tk.Canvas(self, width=20, height=20)
+        self.canvas.grid(row=6, column=0)
+        self.create_circle(10, 10, 9, self.canvas, fill="green")
+
+        self.status_label.grid(row=6, column=0, sticky='e')
 
     def file_dialog(self):
         filename = filedialog.askdirectory()
@@ -86,18 +103,27 @@ class Example(ThemedTk):
     def get_list(self):
         self.parts_list.delete(0, tk.END)
         self.parts_list.insert(tk.END, db.last())
+        row = db.last()
+        # print(row, row[3])
+        self.url_entry.delete(0, tk.END)
+        self.url_entry.insert(tk.END, row[1])
+        self.token_entry.delete(0, tk.END)
+        self.token_entry.insert(tk.END, row[2])
+        self.frequency.set(self.key_list[self.val_list.index(row[3])])
+        self.direct.set(row[4])
+        # print(self.freq[row[3]])
 
     def add_item(self):
         if self.url_entry.get() == '' or self.token_entry.get() == '':
             messagebox.showerror("Required Fields", " Please fill in all fields.")
             return
         # Insert into DB
-        db.insert(self.url_entry.get(), self.token_entry.get(), self.frequency.get(), self.direct.get())
+
+        db.insert(self.url_entry.get(), self.token_entry.get(),  self.freq[self.frequency.get()], self.direct.get())
         # Clear list
         self.parts_list.delete(0, tk.END)
         # Insert into list
-        self.parts_list.insert(tk.END, (self.url_entry.get(), self.token_entry.get(), self.frequency.get(), self.direct.get()))
-
+        self.parts_list.insert(tk.END, (self.url_entry.get(), self.token_entry.get(), self.freq[self.frequency.get()], self.direct.get()))
         self.get_list()
 
 
@@ -141,8 +167,9 @@ class Example(ThemedTk):
 
 if __name__ == '__main__':
     example = Example()
-    example.geometry("700x350+300+300")
+    example.geometry("700x550")
     example.set_theme("breeze")
     example.title('Iotwhynot API Software')
     example.iconphoto(True, PhotoImage(file="image/a.png"))
+    example.protocol("WM_DELETE_WINDOW", example.iconify)
     example.mainloop()
