@@ -11,6 +11,7 @@ tk-tools = "*"
 pyinstaller = "*"
 requests = "*"
 ttkthemes = "*"
+ttkwidgets = "*"
 
 [requires]
 python_version = "3.7"

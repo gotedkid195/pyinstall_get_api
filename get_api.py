@@ -31,10 +31,12 @@ class GetAPI(threading.Thread):
         # print("enumerate",threading.enumerate())
 
     def run(self) -> None:
-        for i in range(100):
+        while True:
             response = requests.get(self.url, headers={"Authorization": f"{self.token}"})
-            print(f"{i} Working: {response}")
-            f = open(os.path.join(f'{self.direct}/data.json'), 'wb')
-            f.write(response.content)
-            f.close()
-            time.sleep(1)
+            print(f"Working: {response}")
+            open(os.path.join(f'{self.direct}/data.json'), 'wb').write(response.content)
+
+            # f = open(os.path.join(f'{self.direct}/data.json'), 'wb')
+            # f.write(response.content)
+            # f.close()
+            # time.sleep(self.freq)

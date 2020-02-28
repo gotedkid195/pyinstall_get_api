@@ -1,10 +1,12 @@
 import os
 import sys
+import getpass
 import tkinter as tk
 from tkinter import ttk, font
 from ttkthemes import ThemedTk
 from db import Database
 from tkinter import messagebox, filedialog
+from ttkwidgets.autocomplete import AutocompleteCombobox
 from get_api import GetAPI
 from tkinter import *
 
@@ -15,15 +17,15 @@ class Example(ThemedTk):
     def __init__(self):
         ThemedTk.__init__(self, themebg=True)
         self.url_label = ttk.Label(self, text="Enter request URL")
-        self.url_entry = ttk.Entry(self, width=60, textvariable=tk.StringVar())
+        self.url_entry =  AutocompleteCombobox(self, completevalues=["https://iotwhynot.com/chip_manager/read_data_api"])
 
         self.token_label = ttk.Label(self, text="Authorization")
-        self.token_entry = ttk.Entry(self, width=60, textvariable=tk.StringVar())
-
+        self.token_entry = ttk.Entry(self, width=50, textvariable=tk.StringVar())
         self.frq_label = ttk.Label(self, text="Frequency of taking data")
 
         self.freq = {
-            "5s": 5,
+            '5s': 5,
+            ' 5s': 5,
             "15s": 15,
             "30s": 30,
             "1m": 60,
@@ -37,21 +39,20 @@ class Example(ThemedTk):
         self.key_list = list(self.freq.keys())
         self.val_list = list(self.freq.values())
         self.frequency = tk.StringVar(self)
+        print(*self.freq.keys())
         self.frq_option = ttk.OptionMenu(self, self.frequency, *self.freq.keys())
 
+        self.parts_list = tk.Listbox(self, height=8, width=50, border=1, background='white')
 
-        self.parts_list = tk.Listbox(self, height=8, width=60, border=1, background='white')
+        self.auto = tk.BooleanVar(value=True)
+        self.checked = ttk.Checkbutton(self, text="Automatically start the software with windows", variable=self.auto)
 
         self.direct = tk.StringVar()
         self.sto_label = tk.Label(self, textvariable=self.direct)
         self.sto_button = ttk.Button(self, text="Please select the path to direct the returned data", command=self.file_dialog)
 
-        self.status_label = ttk.Label(self, text="Retrieving data")
-
-        self.save_button = ttk.Button(self, text="Save", command=self.add_item)
-
+        # self.save_button = ttk.Button(self, text="Save", command=self.add_item)
         self.start_button = ttk.Button(self, text="Start", command=self.start)
-
         self.stop_button = ttk.Button(self, text="Stop", command=self.stop)
 
         self.license = ttk.Label(self, text="Bản quyền thuộc về Teslateq Co., Ltd.")
@@ -78,84 +79,79 @@ class Example(ThemedTk):
         self.frq_label.grid(row=2, column=0, padx=20, pady=20, **sticky)
         self.frq_option.grid(row=2, column=1, sticky='we')
 
-        self.sto_button.grid(row=3, column=0, columnspan=3, padx=20, pady=15, sticky='w')
-        self.sto_label.grid(row=4, column=0, padx=20, columnspan=3, sticky='w')
+        self.checked.grid(row=3, columnspan=2,padx=20, sticky='w')
 
-        self.start_button.grid(row=5, column=1, pady=15, sticky='w')
-        self.stop_button.grid(row=5, column=1)
-        self.save_button.grid(row=5, column=1, sticky='e')
+        self.sto_button.grid(row=4, column=0, columnspan=3, padx=20, pady=15, sticky='w')
+        self.sto_label.grid(row=5, column=0, padx=20, columnspan=3, sticky='w')
 
-        self.parts_list.grid(row=7, column=0, columnspan=2, rowspan=1, pady=20)
-        self.parts_list.bind('<<ListboxSelect>>', self.select_item)
+        self.start_button.grid(row=6, column=1, pady=15, sticky='w')
+        self.stop_button.grid(row=6, column=1, pady=15, sticky='sn')
+        # self.save_button.grid(row=6, column=1, sticky='e')
 
         self.license.grid(row=8, column=0, columnspan=3, sticky='s')
-
-        self.canvas = tk.Canvas(self, width=20, height=20)
-        self.canvas.grid(row=6, column=0)
-        self.create_circle(10, 10, 9, self.canvas, fill="green")
-
-        self.status_label.grid(row=6, column=0, sticky='e')
 
     def file_dialog(self):
         filename = filedialog.askdirectory()
         self.direct.set(filename)
 
     def get_list(self):
-        self.parts_list.delete(0, tk.END)
-        self.parts_list.insert(tk.END, db.last())
         row = db.last()
-        # print(row, row[3])
-        self.url_entry.delete(0, tk.END)
-        self.url_entry.insert(tk.END, row[1])
-        self.token_entry.delete(0, tk.END)
-        self.token_entry.insert(tk.END, row[2])
-        self.frequency.set(self.key_list[self.val_list.index(row[3])])
-        self.direct.set(row[4])
-        # print(self.freq[row[3]])
+        print(row)
+        if row:
+            self.url_entry.delete(0, tk.END)
+            self.url_entry.insert(tk.END, row[1])
+            self.token_entry.delete(0, tk.END)
+            self.token_entry.insert(tk.END, row[2])
+            self.frequency.set(self.key_list[self.val_list.index(row[3])])
+            self.direct.set(row[4])
+            self.auto.set(row[5])
 
     def add_item(self):
-        if self.url_entry.get() == '' or self.token_entry.get() == '':
-            messagebox.showerror("Required Fields", " Please fill in all fields.")
-            return
-        # Insert into DB
-
-        db.insert(self.url_entry.get(), self.token_entry.get(),  self.freq[self.frequency.get()], self.direct.get())
+        print(self.auto.get())
+        direct = self.direct.get()
+        if not direct:
+            dirName = 'downloads'
+            if not os.path.exists(dirName):
+                os.mkdir(dirName)
+            direct = os.getcwd() + '/' + dirName
+        print(direct)
+        db.insert(self.url_entry.get(), self.token_entry.get(),  self.freq[self.frequency.get()], direct,  self.auto.get())
         # Clear list
-        self.parts_list.delete(0, tk.END)
+        # self.parts_list.delete(0, tk.END)
         # Insert into list
-        self.parts_list.insert(tk.END, (self.url_entry.get(), self.token_entry.get(), self.freq[self.frequency.get()], self.direct.get()))
+        # self.parts_list.insert(tk.END, (self.url_entry.get(), self.token_entry.get(), self.freq[self.frequency.get()], self.direct.get(), self.auto.get()))
         self.get_list()
 
 
     def select_item(self, event):
-        # # Create global selected item to use in other functions
-        # global self.selected_item
         try:
             index = self.parts_list.curselection()[0]
-            # Get selected item
             self.selected_item = self.parts_list.get(index)
-            # Add text to entries
             self.url_entry.delete(0, tk.END)
             self.url_entry.insert(tk.END, self.selected_item[1])
             self.token_entry.delete(0, tk.END)
             self.token_entry.insert(tk.END, self.selected_item[2])
-            self.frequency.set(self.selected_item[3])
+            self.frequency.set(self.key_list[self.val_list.index(self.selected_item[3])])
             self.direct.set(self.selected_item[4])
         except IndexError:
             pass
 
     def start(self):
-        if self.url_entry.get() == '' or self.token_entry.get() == '':
-            messagebox.showerror(
-                "Required Fields", " Please fill in all fields.")
+        url = self.url_entry.get()
+        token = self.token_entry.get()
+        freq = self.freq[self.frequency.get()]
+        direct = self.direct.get()
+        auto = self.auto.get()
+        if url == '' or token == '':
+            messagebox.showerror("Required Fields", " Please fill in all fields.")
             return
-
-        self.thread = GetAPI(
-            url=self.url_entry.get(),
-            token=self.token_entry.get(),
-            freq=self.frequency.get(),
-            direct=self.direct.get(),
-        )
+        row = db.last()
+        if not row:
+            self.add_item()
+            row = db.last()
+            direct = row[4]
+        db.update(row[0], url, token, freq, direct, auto)
+        self.thread = GetAPI(url=url, token=token, freq=freq, direct=direct)
         self.thread.start()
         print("Started", self.thread)
 
@@ -164,12 +160,20 @@ class Example(ThemedTk):
             self.thread.stop()
         self.destroy()
 
+    def get_platform(self):
+        if sys.platform == 'linux':
+            USER_NAME = getpass.getuser()
+            file_path = os.path.dirname(os.path.realpath(__file__))
+            bat_path = r'C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup' % USER_NAME
+            with open(bat_path + '\\' + "open.bat", "w+") as bat_file:
+                bat_file.write(r'start "" %s' % file_path)
+
 
 if __name__ == '__main__':
     example = Example()
-    example.geometry("700x550")
+    example.geometry("620x400")
     example.set_theme("breeze")
-    example.title('Iotwhynot API Software')
+    example.title('Iotwhynot API Software ver.1.0.0')
     example.iconphoto(True, PhotoImage(file="image/a.png"))
     example.protocol("WM_DELETE_WINDOW", example.iconify)
     example.mainloop()
