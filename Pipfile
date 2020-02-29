@@ -12,6 +12,7 @@ pyinstaller = "*"
 requests = "*"
 ttkthemes = "*"
 ttkwidgets = "*"
+pywin32 = "*"
 
 [requires]
 python_version = "3.7"

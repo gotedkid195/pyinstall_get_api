@@ -2,13 +2,16 @@ import os
 import sys
 import getpass
 import tkinter as tk
-from tkinter import ttk, font
+from tkinter import ttk
 from ttkthemes import ThemedTk
 from db import Database
 from tkinter import messagebox, filedialog
 from ttkwidgets.autocomplete import AutocompleteCombobox
 from get_api import GetAPI
 from tkinter import *
+import win32com.client
+# import pythoncom
+
 
 db = Database('store.db')
 
@@ -20,7 +23,7 @@ class Example(ThemedTk):
         self.url_entry =  AutocompleteCombobox(self, completevalues=["https://iotwhynot.com/chip_manager/read_data_api"])
 
         self.token_label = ttk.Label(self, text="Authorization")
-        self.token_entry = ttk.Entry(self, width=50, textvariable=tk.StringVar())
+        self.token_entry = ttk.Entry(self, width=70, textvariable=tk.StringVar())
         self.frq_label = ttk.Label(self, text="Frequency of taking data")
 
         self.freq = {
@@ -39,10 +42,7 @@ class Example(ThemedTk):
         self.key_list = list(self.freq.keys())
         self.val_list = list(self.freq.values())
         self.frequency = tk.StringVar(self)
-        print(*self.freq.keys())
         self.frq_option = ttk.OptionMenu(self, self.frequency, *self.freq.keys())
-
-        self.parts_list = tk.Listbox(self, height=8, width=50, border=1, background='white')
 
         self.auto = tk.BooleanVar(value=True)
         self.checked = ttk.Checkbutton(self, text="Automatically start the software with windows", variable=self.auto)
@@ -55,7 +55,17 @@ class Example(ThemedTk):
         self.start_button = ttk.Button(self, text="Start", command=self.start)
         self.stop_button = ttk.Button(self, text="Stop", command=self.stop)
 
-        self.license = ttk.Label(self, text="Bản quyền thuộc về Teslateq Co., Ltd.")
+        self.status_label = ttk.Label(self, text="Status:")
+        self.status = tk.Label(self, text="Inactive (dead)", fg="red", font=("Courier", 11))
+        self.status_label.grid(row=6, column=0)
+        self.status.grid(row=6, column=1, sticky='w')
+        # self.abc = tk.BooleanVar(value=True)
+        # self.status = ttk.Checkbutton(self, text="", variable=self.abc)
+        # self.radio = ttk.Radiobutton(self, text="Radio two", value=True)
+        # self.status.config(text="ksnvlk", variable=tk.BooleanVar(value=False))
+        # self.radio.config(text="Radio sbvk", value=False)
+
+        self.license = ttk.Label(self, text="© Copyright Teslateq Co., Ltd.")
         self.grid_widgets()
         self.get_list()
         self.thread = None
@@ -84,10 +94,11 @@ class Example(ThemedTk):
         self.sto_button.grid(row=4, column=0, columnspan=3, padx=20, pady=15, sticky='w')
         self.sto_label.grid(row=5, column=0, padx=20, columnspan=3, sticky='w')
 
-        self.start_button.grid(row=6, column=1, pady=15, sticky='w')
-        self.stop_button.grid(row=6, column=1, pady=15, sticky='sn')
+        self.start_button.grid(row=6, column=1, pady=15, sticky='sn')
+        self.stop_button.grid(row=6, column=1, pady=15, sticky='e')
         # self.save_button.grid(row=6, column=1, sticky='e')
-
+        # self.status.grid(row=6, column=0, pady=15, sticky='w')
+        # self.radio.grid(row=7, column=1, **sticky)
         self.license.grid(row=8, column=0, columnspan=3, sticky='s')
 
     def file_dialog(self):
@@ -96,8 +107,11 @@ class Example(ThemedTk):
 
     def get_list(self):
         row = db.last()
-        print(row)
+        print('get_list_row', row)
         if row:
+            if row[5] == 1: # Auto startup
+                self.thread = GetAPI(url=row[1], token=row[2], freq=row[3], direct=row[4])
+                self.thread.start()
             self.url_entry.delete(0, tk.END)
             self.url_entry.insert(tk.END, row[1])
             self.token_entry.delete(0, tk.END)
@@ -107,19 +121,17 @@ class Example(ThemedTk):
             self.auto.set(row[5])
 
     def add_item(self):
-        print(self.auto.get())
         direct = self.direct.get()
         if not direct:
             dirName = 'downloads'
             if not os.path.exists(dirName):
                 os.mkdir(dirName)
-            direct = os.getcwd() + '/' + dirName
-        print(direct)
-        db.insert(self.url_entry.get(), self.token_entry.get(),  self.freq[self.frequency.get()], direct,  self.auto.get())
-        # Clear list
-        # self.parts_list.delete(0, tk.END)
-        # Insert into list
-        # self.parts_list.insert(tk.END, (self.url_entry.get(), self.token_entry.get(), self.freq[self.frequency.get()], self.direct.get(), self.auto.get()))
+            direct = f'{os.getcwd()}\{dirName}'
+        auto = self.auto.get()
+        print("auto", auto)
+        if auto:
+            self.create_shortcut_auto_startup()
+        db.insert(self.url_entry.get(), self.token_entry.get(),  self.freq[self.frequency.get()], direct,  auto)
         self.get_list()
 
 
@@ -150,8 +162,13 @@ class Example(ThemedTk):
             self.add_item()
             row = db.last()
             direct = row[4]
+            auto = row[6]
+        if auto == 1: # auto startup
+            self.create_shortcut_auto_startup()
+        else:
+            self.remove_shortcut()
         db.update(row[0], url, token, freq, direct, auto)
-        self.thread = GetAPI(url=url, token=token, freq=freq, direct=direct)
+        self.thread = GetAPI(url=url, token=token, freq=freq, direct=direct, tkinter=self)
         self.thread.start()
         print("Started", self.thread)
 
@@ -160,18 +177,39 @@ class Example(ThemedTk):
             self.thread.stop()
         self.destroy()
 
-    def get_platform(self):
-        if sys.platform == 'linux':
-            USER_NAME = getpass.getuser()
-            file_path = os.path.dirname(os.path.realpath(__file__))
-            bat_path = r'C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup' % USER_NAME
-            with open(bat_path + '\\' + "open.bat", "w+") as bat_file:
-                bat_file.write(r'start "" %s' % file_path)
+    def create_shortcut_auto_startup(self):
+        # pythoncom.CoInitialize() # remove the '#' at the beginning of the line if running in a thread.
+        USER_NAME = getpass.getuser()
+        desktop = r'C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup' % USER_NAME
+        path = os.path.join(desktop, 'iotwhynot.lnk')  # path to where you want to put the .lnk
+        target = f'{os.path.dirname(os.path.realpath(__file__))}\main.exe'
+        icon = f'{os.path.dirname(os.path.realpath(__file__))}\image\logo.ico'
 
+        shell = win32com.client.Dispatch("WScript.Shell")
+        shortcut = shell.CreateShortCut(path)
+        shortcut.Targetpath = target
+        shortcut.IconLocation = icon
+        shortcut.WindowStyle = 7  # 7 - Minimized, 3 - Maximized, 1 - Normal
+        shortcut.save()
+        """
+        intWindowStyle - Description
+        1 Activates and displays a window. If the window is minimized or maximized, the system restores it to its original size and position.
+        3 Activates the window and displays it as a maximized window.
+        7 Minimizes the window and activates the next top-level window.
+        """
+
+    def remove_shortcut(self):
+        USER_NAME = getpass.getuser()
+        path = r'C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\iotwhynot.lnk' % USER_NAME
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
 
 if __name__ == '__main__':
     example = Example()
-    example.geometry("620x400")
+    example.geometry("640x370")  # width x height
+    example.resizable(width=FALSE, height=FALSE) # fix frames
     example.set_theme("breeze")
     example.title('Iotwhynot API Software ver.1.0.0')
     example.iconphoto(True, PhotoImage(file="image/a.png"))
