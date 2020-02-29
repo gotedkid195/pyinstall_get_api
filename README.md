@@ -34,7 +34,7 @@ pyinstaller --onefile --windowed main.py
 
 ## Use pyinstaller to build the app on Mac
 ```bash
-pyinstaller --onefile --add-binary='/System/Library/Frameworks/Tk.framework/Tk':'tk' --add-binary='/System/Library/Frameworks/Tcl.framework/Tcl':'tcl' main.py
+pyinstaller main.py
 ```
 
 ## License

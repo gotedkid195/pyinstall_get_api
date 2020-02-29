@@ -163,6 +163,7 @@ class Example(ThemedTk):
             row = db.last()
             direct = row[4]
             auto = row[6]
+            self.tkinter.status.config(text=f"Saved", fg="green")
         if auto == 1: # auto startup
             self.create_shortcut_auto_startup()
         else:
