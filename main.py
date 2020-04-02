@@ -1,5 +1,3 @@
-import os
-import sys
 import getpass
 import tkinter as tk
 from tkinter import ttk
@@ -9,9 +7,9 @@ from tkinter import messagebox, filedialog
 from ttkwidgets.autocomplete import AutocompleteCombobox
 from get_api import GetAPI
 from tkinter import *
-import win32com.client
-# import pythoncom
-
+from win32com.client import Dispatch
+import sys, os
+import winreg as reg
 
 db = Database('store.db')
 
@@ -110,7 +108,7 @@ class Example(ThemedTk):
         print('get_list_row', row)
         if row:
             if row[5] == 1: # Auto startup
-                self.thread = GetAPI(url=row[1], token=row[2], freq=row[3], direct=row[4])
+                self.thread = GetAPI(url=row[1], token=row[2], freq=row[3], direct=row[4],  tkinter=self)
                 self.thread.start()
             self.url_entry.delete(0, tk.END)
             self.url_entry.insert(tk.END, row[1])
@@ -162,15 +160,18 @@ class Example(ThemedTk):
             self.add_item()
             row = db.last()
             direct = row[4]
-            auto = row[6]
-            self.tkinter.status.config(text=f"Saved", fg="green")
-        if auto == 1: # auto startup
+            auto = row[5]
+            self.status.config(text=f"Changes saved", fg="black")
+        if auto == 1:  # auto startup
             self.create_shortcut_auto_startup()
         else:
             self.remove_shortcut()
-        db.update(row[0], url, token, freq, direct, auto)
+        my_tuple = (row[0], url, token, freq, direct, auto)
         self.thread = GetAPI(url=url, token=token, freq=freq, direct=direct, tkinter=self)
         self.thread.start()
+        if my_tuple != row:
+            self.status.config(text=f"Changes saved", fg="black")
+            db.update(row[0], url, token, freq, direct, auto)
         print("Started", self.thread)
 
     def stop(self):
@@ -179,19 +180,20 @@ class Example(ThemedTk):
         self.destroy()
 
     def create_shortcut_auto_startup(self):
-        # pythoncom.CoInitialize() # remove the '#' at the beginning of the line if running in a thread.
-        USER_NAME = getpass.getuser()
-        desktop = r'C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup' % USER_NAME
-        path = os.path.join(desktop, 'iotwhynot.lnk')  # path to where you want to put the .lnk
-        target = f'{os.path.dirname(os.path.realpath(__file__))}\main.exe'
-        icon = f'{os.path.dirname(os.path.realpath(__file__))}\image\logo.ico'
-
-        shell = win32com.client.Dispatch("WScript.Shell")
-        shortcut = shell.CreateShortCut(path)
-        shortcut.Targetpath = target
-        shortcut.IconLocation = icon
-        shortcut.WindowStyle = 7  # 7 - Minimized, 3 - Maximized, 1 - Normal
-        shortcut.save()
+        if sys.platform == 'win32':
+            USER_NAME = getpass.getuser()
+            desktop = r'C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup' % USER_NAME
+            path = os.path.join(desktop, 'iotwhynot.lnk')  # path to where you want to put the .lnk
+            target = f'{os.path.dirname(os.path.realpath(__file__))}\main.exe'
+            icon = f'{os.path.dirname(os.path.realpath(__file__))}\image\logo.ico'
+            file_path = f'{os.path.dirname(os.path.realpath(__file__))}'
+            shell = Dispatch("WScript.Shell")
+            shortcut = shell.CreateShortCut(path)
+            shortcut.Targetpath = target
+            shortcut.WorkingDirectory = file_path
+            shortcut.IconLocation = icon
+            shortcut.WindowStyle = 7  # 7 - Minimized, 3 - Maximized, 1 - Normal
+            shortcut.save()
         """
         intWindowStyle - Description
         1 Activates and displays a window. If the window is minimized or maximized, the system restores it to its original size and position.
@@ -200,12 +202,13 @@ class Example(ThemedTk):
         """
 
     def remove_shortcut(self):
-        USER_NAME = getpass.getuser()
-        path = r'C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\iotwhynot.lnk' % USER_NAME
-        try:
-            os.remove(path)
-        except FileNotFoundError:
-            pass
+        if sys.platform == 'win32':
+            USER_NAME = getpass.getuser()
+            path = r'C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\iotwhynot.lnk' % USER_NAME
+            try:
+                os.remove(path)
+            except FileNotFoundError:
+                pass
 
 if __name__ == '__main__':
     example = Example()

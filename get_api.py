@@ -1,9 +1,7 @@
 import threading
 import requests
 import time
-import datetime
 import os
-import errno
 import signal
 
 

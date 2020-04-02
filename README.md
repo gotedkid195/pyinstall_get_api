@@ -25,17 +25,32 @@ python -m pip install pipenv
 ```bash
 pipenv shell
 pipenv install
-python -m pip install pyinstaller
+python3 -m pip install pyinstaller
+pyinstaller --version  # Verifying the installation
 ```
 - Build app
 ```bash
-pyinstaller --onefile --windowed main.py
+pyinstaller --onefile --windowed --icon=image\logo.ico main.py
 ```
+- In the dist folder you find the file main (distribute to your users). Please copy it and paste it outside the dist folder. Now double click to run the program
 
 ## Use pyinstaller to build the app on Mac
+- Install library
 ```bash
-pyinstaller main.py
+brew install pipenv # if you have brew installed
+pip3 install pipenv # if you don't have brew installed
+cd pyinstall_get_api/
+pipenv shell
+pipenv install
+python3 -m pip install pyinstaller
+pyinstaller --version  # Verifying the installation
 ```
+- Build app
+```bash
+pyinstaller --onefile --windowed --icon=image\logo.ico main.py
+```
+- In the dist folder you find the file main (distribute to your users). Please copy it and paste it outside the dist folder. Now double click to run the program
+
 
 ## License
 - [MIT](https://choosealicense.com/licenses/mit/)
